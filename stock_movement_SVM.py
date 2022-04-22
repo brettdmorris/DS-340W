@@ -5,9 +5,9 @@ Brett Morris and Aiden Subers
 
 import pandas as pd
 import pandas_technical_indicators as ti
-from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import GridSearchCV
+from sklearn.svm import SVC
 
 
 #Calculates and appends technical indicators to the dataframe using the pandas_technical_indicators library
@@ -56,39 +56,38 @@ def prepare_data(df, target_date):
     y_test = y[splits:]
     return X_train, X_test, y_train, y_test
 
-#Random Forest classifier that returns the accuracy of the model given the split data and optionally calls grid_search for grid search cross validation
-def classifier_RF(X_train, X_test, y_train, y_test, search):
-    rf = RandomForestClassifier(n_estimators=65, random_state=42)
+#Support Vector Margins classifier that returns the accuracy of the model given the split data and optionally calls grid_search for grid search cross validation
+def classifier_SVM(X_train, X_test, y_train, y_test, search):
+    boost = SVC(kernel='poly', random_state=42)
     if search==True:
-        grid_search(rf, X_train, y_train)
-    rf.fit(X_train, y_train)
-    pred = rf.predict(X_test)
+        grid_search(boost, X_train, y_train)
+    boost.fit(X_train, y_train)
+    pred = boost.predict(X_test)
     accuracy = accuracy_score(pred, y_test)
     return(accuracy)
 
 #Optionally called function that does a grid search cross-validation on given values for applicable parameters and prints the optimal values
 def grid_search(model, X_train, y_train):
-    params = {'n_estimators':[40, 65, 80, 100, 125],
-              'max_depth': [None, 1, 2, 3],
-              'bootstrap': [True, False],
-              'min_samples_leaf': [1, 2, 3, 4]}
+    params = {'kernel': ['linear', 'poly', 'rbf', 'sigmoid'],
+              'gamma': ['scale', 'auto'],
+              'C': [1.0, 0.9, 0.8]}
     gs = GridSearchCV(model, params)
     gs.fit(X_train, y_train)
     print(gs.best_params_)
     
 
-#Main function encapsulating imperative statements and calling the classifier_RF function on the prepare_data function on the given dataset
+#Main function encapsulating imperative statements and calling the classifier_GB function on the prepare_data function on the given dataset
 #The optional arguments allow changing of the dataset, the target date for prediction, and whether to perform grid search cross validation
 #Leave search=False to only run the model on the given data
 def main(dataset='AAPL.csv', target_date=30, search=False):
     data = pd.read_csv(dataset)
     del(data['Date'])
     del(data['Adj Close'])
-    output = classifier_RF(*prepare_data(data, target_date), search)
+    output = classifier_SVM(*prepare_data(data, target_date), search)
     print("Accuracy:", output)
 
 
 if __name__ == "__main__":
     main()
-    #for i in range(30,95,5):
+    #for i in range(2,31):
         #main(target_date=i)
